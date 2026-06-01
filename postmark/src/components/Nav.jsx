@@ -10,7 +10,7 @@ export default function Nav() {
                     <circle cx="11" cy="11" r="10" fill="none" stroke="#4169E1" strokeWidth="2"/>
                     <circle cx="11" cy="11" r="4" fill="none" stroke="#4169E1" strokeWidth="1.5"/>
                 </svg>
-                postmark
+                Postmark
             </Link>
         </div>
         <ul className={styles.navList}>          
