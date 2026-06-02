@@ -2,6 +2,10 @@ import { Link, useLocation } from 'react-router-dom'
 import styles from './Results.module.css'
 import { useEffect, useState } from 'react'
 
+function formatPostcode(raw) {
+  const clean = raw.replace(/\s+/g, '').toUpperCase()
+  return clean.slice(0, -3) + ' ' + clean.slice(-3)
+}
 
 export default function Results({ criteria }) {
 
@@ -9,30 +13,58 @@ export default function Results({ criteria }) {
   const { postcode } = location.state
   const [locationData, setLocationData] = useState(null)
   const [error, setError] = useState(null)
+  const [priceData, setPriceData] = useState(null)
+  const [crimeData, setCrimeData] = useState(null)
 
   useEffect(() => {
-    const fetchLocation = async () => {
+    const fetchAll = async () => {
       try {
-        const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`)
-        const data = await response.json()
 
-        if (data.status === 200) {
-          setLocationData(data)
-        } else {
-          setError('Something went wrong. Please try again.')
+        const postcodeRes = await fetch(`https://api.postcodes.io/postcodes/${postcode}`)
+        const postcodeData = await postcodeRes.json()
+
+        if (postcodeData.status !== 200) {
+          setError('Postcode not found. Please check and try again.')
+          return
         }
+
+        setLocationData(postcodeData)
+
+        const { latitude, longitude } = postcodeData.result
+     
+        const years = [2021, 2022, 2023, 2024, 2025]
+
+        const [crimeRes, ...priceResByYear] = await Promise.all([
+          fetch(`https://data.police.uk/api/crimes-street/all-crime?lat=${latitude}&lng=${longitude}`),
+          ...years.map(year =>
+            fetch(`https://landregistry.data.gov.uk/data/ppi/transaction-record.json?propertyAddress.postcode=${formatPostcode(postcode)}&min-transactionDate=${year}-01-01&max-transactionDate=${year}-12-31&_page=0&_pageSize=50`)
+          )
+        ])
+
+        const crimeJson = await crimeRes.json()
+        const priceJsonByYear = await Promise.all(priceResByYear.map(r => r.json()))
+
+        setCrimeData(crimeJson)
+        setPriceData(priceJsonByYear)
+
+        console.log('prices by year:', priceJsonByYear)
+
       } catch (err) {
         setError('Something went wrong. Please try again.')
-      }
     }
-    fetchLocation()
-  }, [postcode])
+  }
 
-  console.log(locationData)
+  fetchAll()
+}, [postcode])
+
+  console.log('location:', locationData)
+  console.log('crime:', crimeData)
+  console.log('price:', priceData)
+  
 
   return (
     <main className={styles.main}>
-      
+
         {error && <p className={styles.error}>{error}</p>}
 
         <Link className={styles.back} to="/">
