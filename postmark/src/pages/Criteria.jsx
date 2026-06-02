@@ -10,14 +10,7 @@ function getWeightLabel(value) {
   return 'Top'
 }
 
-export default function Criteria() {
-
-  const [criteria, setCriteria] = useState({
-  housePrices: 4,
-  crimeRate: 3,
-  commuteTime: 5,
-  deprivation: 2
-})
+export default function Criteria({ criteria, setCriteria }) {  
 
   return (
     <main className={styles.main}>

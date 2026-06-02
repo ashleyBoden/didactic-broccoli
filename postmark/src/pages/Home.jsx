@@ -1,9 +1,14 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import styles from './Home.module.css'
+import { Link, useNavigate } from 'react-router-dom'
 
-export default function Home() {
+export default function Home({ criteria }) {
   const [searchTerm, setSearchTerm] = useState('')
+  const navigate = useNavigate()
+
+  const handleSearch = () => {
+    navigate('/results', { state: { postcode: searchTerm}})
+  }
 
   return (
     <main className={styles.main}>
@@ -17,7 +22,7 @@ export default function Home() {
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Enter a postcode..."
         />
-        <button onClick={() => console.log(searchTerm)}>Score it</button>
+        <button onClick={handleSearch}>Score it</button>
       </div>
 
       <div className={styles.pills}>
