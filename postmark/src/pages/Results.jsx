@@ -1,14 +1,39 @@
 import { Link, useLocation } from 'react-router-dom'
 import styles from './Results.module.css'
+import { useEffect, useState } from 'react'
 
 
 export default function Results({ criteria }) {
 
   const location = useLocation()
   const { postcode } = location.state
+  const [locationData, setLocationData] = useState(null)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    const fetchLocation = async () => {
+      try {
+        const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`)
+        const data = await response.json()
+
+        if (data.status === 200) {
+          setLocationData(data)
+        } else {
+          setError('Something went wrong. Please try again.')
+        }
+      } catch (err) {
+        setError('Something went wrong. Please try again.')
+      }
+    }
+    fetchLocation()
+  }, [postcode])
+
+  console.log(locationData)
 
   return (
     <main className={styles.main}>
+      
+        {error && <p className={styles.error}>{error}</p>}
 
         <Link className={styles.back} to="/">
         New search
@@ -17,7 +42,7 @@ export default function Results({ criteria }) {
         <div className={styles.header}>
           <div className={styles.headerLeft}>
             <p className={styles.postcode}>{postcode}</p>
-            <p className={styles.location}>Didsbury, Manchester</p>
+            <p className={styles.location}>{locationData ? `${locationData.result.admin_ward}, ${locationData.result.admin_district}` : 'Loading...'}</p>
           </div>
 
           <div className={styles.headerRight}>
