@@ -43,7 +43,7 @@
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
-    max-width: 250px;
+    width: 250px;
     line-height: 1.4;
 }
 
@@ -86,7 +86,7 @@
 }
 
 .rowValue {
-    min-width: 75px;
+    width: 75px;
     display: flex;
     flex-direction: column;
     justify-content: center;
