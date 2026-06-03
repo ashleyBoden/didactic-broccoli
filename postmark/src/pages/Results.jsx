@@ -7,6 +7,15 @@ function formatPostcode(raw) {
   return clean.slice(0, -3) + ' ' + clean.slice(-3)
 }
 
+function processYearData(items) {
+  if (!items || items.length === 0) 
+    return null 
+
+  const prices = items.map(item => item.pricePaid).sort((a, b) => a - b)
+  const median = Math.floor(prices.length / 2)
+  return prices[median]
+}
+
 export default function Results({ criteria }) {
 
   const location = useLocation()
@@ -57,10 +66,16 @@ export default function Results({ criteria }) {
   fetchAll()
 }, [postcode])
 
+
   console.log('location:', locationData)
   console.log('crime:', crimeData)
   console.log('price:', priceData)
   
+  const priceByYear = priceData ? priceData.map(yearData =>
+    processYearData(yearData.result.items)
+  ) : null
+
+  console.log('price by year: ', priceByYear)
 
   return (
     <main className={styles.main}>
