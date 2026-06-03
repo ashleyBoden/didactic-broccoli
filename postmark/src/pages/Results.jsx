@@ -75,6 +75,8 @@ export default function Results({ criteria }) {
     processYearData(yearData.result.items)
   ) : null
 
+  const currentPrice = priceByYear?.findLast(price => price !== null)
+
   console.log('price by year: ', priceByYear)
 
   return (
@@ -123,7 +125,7 @@ export default function Results({ criteria }) {
           <div className={`${styles.stats} ${styles.statsWithBorder}`}>
             <div className={styles.stat}>
               <p className={styles.statLabel}>Median sold price</p>
-              <p className={styles.statValue}>£372,500</p>
+              <p className={styles.statValue}>{currentPrice ? `£${currentPrice.toLocaleString()}` : 'No data'}</p>
             </div>
             <div className={styles.stat}>
               <p className={styles.statLabel}>12-month change</p>
