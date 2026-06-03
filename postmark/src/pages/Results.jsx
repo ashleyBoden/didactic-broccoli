@@ -2,6 +2,8 @@ import { Link, useLocation } from 'react-router-dom'
 import styles from './Results.module.css'
 import { useEffect, useState } from 'react'
 
+
+//property data processing functions
 function formatPostcode(raw) {
   const clean = raw.replace(/\s+/g, '').toUpperCase()
   return clean.slice(0, -3) + ' ' + clean.slice(-3)
@@ -31,6 +33,43 @@ function getMostCommonType(items) {
   return mostCommon
 }
 
+//Crime data processing functions
+function formatCategory(category) {
+  const withSpaces = category.replace(/-/g, ' ')
+  return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1)
+}
+
+function processCrimeData(items) {
+  if (!items || items.length === 0)
+    return null
+
+  const total = items.length
+  
+  const tally = {}
+  items.forEach(item => {
+    const category = item.category
+    tally[category] = (tally[category] || 0) + 1
+  })
+  const mostCommonCategory = Object.keys(tally).sort((a, b) => tally[b] - tally[a])[0]
+
+  const uniqueMonths = new Set(items.map(crime => crime.month))
+  const perMonth = Math.round(total / uniqueMonths.size)
+
+  return {
+    total, 
+    mostCommonCategory
+  }
+}
+
+function formatMonth(monthStr) {
+  if (!monthStr) return null
+
+  const [year, month] = monthStr.split('-')
+  const date = new Date(year, month - 1)
+  return date.toLocaleString('en-GB', { month: 'long', year: 'numeric' })
+}
+
+
 export default function Results({ criteria }) {
 
   const location = useLocation()
@@ -39,6 +78,9 @@ export default function Results({ criteria }) {
   const [error, setError] = useState(null)
   const [priceData, setPriceData] = useState(null)
   const [crimeData, setCrimeData] = useState(null)
+  const crimeStats = crimeData ? processCrimeData(crimeData) : null
+  const { total, mostCommonCategory } = crimeStats || {} //Crime data
+
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -73,7 +115,7 @@ export default function Results({ criteria }) {
         setCrimeData(crimeJson)
         setPriceData(priceJsonByYear)
 
-        console.log('prices by year:', priceJsonByYear)
+        console.log(crimeJson)
 
       } catch (err) {
         setError('Something went wrong. Please try again.')
@@ -183,16 +225,16 @@ export default function Results({ criteria }) {
 
           <div className={`${styles.stats} ${styles.statsWithBorder}`}>
             <div className={styles.stat}>
-              <p className={styles.statLabel}>Crimes per 1,000</p>
-              <p className={styles.statValue}>62</p>
+              <p className={styles.statLabel}>Total crime for the mont</p>
+              <p className={styles.statValue}>{total ? total : null}</p>
             </div>
             <div className={styles.stat}>
-              <p className={styles.statLabel}>vs city average</p>
-              <p className={styles.statValue}>-23%</p>
+              <p className={styles.statLabel}>Data period</p>
+              <p className={styles.statValue}>{formatMonth(crimeData?.[0]?.month)}</p>
             </div>
             <div className={styles.stat}>
               <p className={styles.statLabel}>Most common</p>
-              <p className={styles.statValue}>Vehicle crime</p>
+              <p className={styles.statValue}>{mostCommonCategory ? formatCategory(mostCommonCategory) : 'No data'}</p>
             </div>
           </div>          
 
