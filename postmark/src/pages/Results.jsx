@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import styles from './Results.module.css'
 import { useEffect, useState } from 'react'
+import { calculateScores } from '../utils/scoring'
 
 
   //property data processing functions
@@ -231,11 +232,17 @@ export default function Results({ criteria }) {
     processYearData(yearData.result.items)
   ) : null
 
-    //12 year price change
+    //12 month price change
   const currentPrice = priceByYear?.findLast(price => price !== null)
+  const previousPrice = priceByYear?.slice(0, -1).findLast(price => price !== null)
+  const priceChange = currentPrice && previousPrice ?
+    ((currentPrice - previousPrice) / previousPrice * 100).toFixed(1) : null
+
+   //vs UK Median
   const currentUKMedianPrice = 285000
-  const vsUKAverage = currentPrice - currentUKMedianPrice
-  const vsUKAverageFormatted = vsUKAverage >= 0
+  const vsUKAverage = currentPrice ? currentPrice - currentUKMedianPrice : null
+  const vsUKAverageFormatted = vsUKAverage === null ? null
+  : vsUKAverage >= 0
     ? `+£${vsUKAverage.toLocaleString()}` 
     : `-£${Math.abs(vsUKAverage).toLocaleString()}`
 
@@ -246,7 +253,15 @@ export default function Results({ criteria }) {
     //National rank
   const rank = locationData?.result.index_of_multiple_deprivation
   
-
+  const scores = currentPrice && total && commuteData && rank
+    ? calculateScores({
+        currentPrice,
+        priceChange: parseFloat(priceChange),
+        total: total,
+        distanceMiles: commuteData.distanceMiles,
+        deprivationRank: rank
+      }, criteria)
+    : null
 
   return (
     <main className={styles.main}>
@@ -259,13 +274,13 @@ export default function Results({ criteria }) {
 
         <div className={styles.header}>
           <div className={styles.headerLeft}>
-            <p className={styles.postcode}>{postcode}</p>
+            <p className={styles.postcode}>{formatPostcode(postcode)}</p>
             <p className={styles.location}>{locationData ? `${locationData.result.admin_ward}, ${locationData.result.admin_district}` : 'Loading...'}</p>
           </div>
 
           <div className={styles.headerRight}>
             <div className={styles.scoreCircle}>
-              <p className={styles.scoreNumber}>7.4</p>
+              <p className={styles.scoreNumber}>{scores ? scores.overallScore.toFixed(1) : '—'}</p>
               <p className={styles.scoreLabel}>/ 10</p>
             </div>
             <p className={styles.scoreName}>POSTMARK SCORE</p>
@@ -281,12 +296,12 @@ export default function Results({ criteria }) {
             </div>
             <div className={styles.scorePill}>
               <span className={styles.scoreDot}></span>
-              <span>6.2</span>
+              <span>{scores ? scores.housePricesScore.toFixed(1) : '—'}</span>
             </div>
           </div>
 
           <div className={styles.progressBar}>
-            <div className={styles.progressFill} style={{ width: '62%' }}></div>
+            <div className={styles.progressFill} style={{ width: `${scores?.housePricesScore * 10}%` }}></div>
           </div>
 
           <p className={styles.cardSummary}>Above the Manchester average, but stable and well-supported by demand.</p>
@@ -317,12 +332,12 @@ export default function Results({ criteria }) {
             </div>
             <div className={styles.scorePill}>
               <span className={styles.scoreDot}></span>
-              <span>7.0</span>
+              <span>{scores ? scores.crimeScore.toFixed(1) : '—'}</span>
             </div>
           </div>
 
           <div className={styles.progressBar}>
-            <div className={styles.progressFill} style={{ width: '70%' }}></div>
+            <div className={styles.progressFill} style={{ width: `${scores?.crimeScore * 10}%` }}></div>
           </div>
 
           <p className={styles.cardSummary}>Lower than most of inner Manchester. Vehicle crime is the main category.</p>
@@ -353,12 +368,12 @@ export default function Results({ criteria }) {
             </div>
             <div className={styles.scorePill}>
               <span className={styles.scoreDot}></span>
-              <span>8.6</span>
+              <span>{scores ? scores.commuteScore.toFixed(1) : '—'}</span>
             </div>
           </div>
 
           <div className={styles.progressBar}>
-            <div className={styles.progressFill} style={{ width: '86%' }}></div>
+            <div className={styles.progressFill} style={{ width: `${scores?.commuteScore * 10}%` }}></div>
           </div>
 
           <p className={styles.cardSummary}>Fast, frequent links into the city centre on both Metrolink and rail.</p>
@@ -387,12 +402,12 @@ export default function Results({ criteria }) {
             </div>
             <div className={styles.scorePill}>
               <span className={styles.scoreDot}></span>
-              <span>5.1</span>
+              <span>{scores ? scores.deprivationScore.toFixed(1) : '—'}</span>
             </div>
           </div>
 
           <div className={styles.progressBar}>
-            <div className={styles.progressFill} style={{ width: '51%' }}></div>
+            <div className={styles.progressFill} style={{ width: `${scores?.deprivationScore * 10}%` }}></div>
           </div>
 
           <p className={styles.cardSummary}>Mid-range deprivation. Some variation within the postcode district.</p>
