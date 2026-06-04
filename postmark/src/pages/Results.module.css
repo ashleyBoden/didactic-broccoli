@@ -114,9 +114,21 @@
 
 .stats {
     display: flex;
-    justify-content: space-between;
     margin-top: 20px;
-    padding: 0 10px 0 10px;
+    padding: 0 10px;
+    align-self: stretch;
+}
+
+.stat {
+    flex: 1;
+}
+
+.stat:nth-child(2) {
+    text-align: center;
+}
+
+.stat:nth-child(3) {
+    text-align: right;
 }
 
 .statsWithBorder {
