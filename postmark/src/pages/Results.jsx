@@ -279,10 +279,17 @@ export default function Results({ criteria }) {
           </div>
 
           <div className={styles.headerRight}>
-            <div className={styles.scoreCircle}>
-              <p className={styles.scoreNumber}>{scores ? scores.overallScore.toFixed(1) : '—'}</p>
-              <p className={styles.scoreLabel}>/ 10</p>
-            </div>
+            <svg width="150" height="150" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="4"/>
+              <circle cx="60" cy="60" r="54" fill="none" stroke="#4169E1" strokeWidth="8"
+                strokeDasharray="339.3"
+                strokeDashoffset={339.3 * (1 - (scores?.overallScore ?? 0) / 10)}
+                strokeLinecap="round"
+                transform="rotate(-90 60 60)"
+              />
+            </svg>
+            <p className={styles.scoreNumber}>{scores ? scores.overallScore.toFixed(1) : '—'}</p>
+            <p className={styles.scoreLabel}>/ 10</p>
             <p className={styles.scoreName}>POSTMARK SCORE</p>
           </div>
           

@@ -16,6 +16,7 @@
     padding-bottom: 24px;
     border-bottom: 1px solid var(--border);
     margin-bottom: 16px;
+    
 }
 
 .postcode {
@@ -56,6 +57,7 @@
 
 .headerRight {
     align-items: center;
+    position: relative;
 }
 
 .scoreNumber {
@@ -63,6 +65,9 @@
     font-weight: 700;
     line-height: 1;
     color: var(--text-primary);
+    position: absolute;
+    top: 40px;
+    left: 45px;
 }
 
 .scoreLabel {
@@ -72,6 +77,10 @@
     margin-top: 8px;
     align-self: center;
     font-weight: 600;
+    position: absolute;
+    bottom: 80px;
+    left: 65px;
+    text-align: center;
 }
 
 .card {
