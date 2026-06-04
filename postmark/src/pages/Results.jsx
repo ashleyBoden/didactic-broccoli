@@ -3,7 +3,7 @@ import styles from './Results.module.css'
 import { useEffect, useState } from 'react'
 
 
-//property data processing functions
+  //property data processing functions
 function formatPostcode(raw) {
   const clean = raw.replace(/\s+/g, '').toUpperCase()
   return clean.slice(0, -3) + ' ' + clean.slice(-3)
@@ -33,7 +33,7 @@ function getMostCommonType(items) {
   return mostCommon
 }
 
-//Crime data processing functions
+  //Crime data processing functions
 function formatCategory(category) {
   const withSpaces = category.replace(/-/g, ' ')
   return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1)
@@ -69,6 +69,66 @@ function formatMonth(monthStr) {
   return date.toLocaleString('en-GB', { month: 'long', year: 'numeric' })
 }
 
+  //Commute time functions
+const CITY_CENTRES = {
+  'London': { lat: 51.5074, lng: -0.1278 },
+  'Manchester': { lat: 53.4808, lng: -2.2426 },
+  'Birmingham': { lat: 52.4862, lng: -1.8904 },
+  'Leeds': { lat: 53.8008, lng: -1.5491 },
+  'Sheffield': { lat: 53.3811, lng: -1.4701 },
+  'Bristol': { lat: 51.4545, lng: -2.5879 },
+  'Edinburgh': { lat: 55.9533, lng: -3.1883 },
+  'Glasgow': { lat: 55.8642, lng: -4.2518 },
+  'Liverpool': { lat: 53.4084, lng: -2.9916 },
+  'Newcastle': { lat: 54.9783, lng: -1.6178 },
+  'Nottingham': { lat: 52.9548, lng: -1.1581 },
+  'Cardiff': { lat: 51.4816, lng: -3.1791 },
+  'Leicester': { lat: 52.6369, lng: -1.1398 },
+  'Coventry': { lat: 52.4068, lng: -1.5197 },
+  'Bradford': { lat: 53.7960, lng: -1.7594 },
+  'Hull': { lat: 53.7676, lng: -0.3274 },
+  'Stoke': { lat: 53.0027, lng: -2.1794 },
+  'Derby': { lat: 52.9225, lng: -1.4746 },
+  'Southampton': { lat: 50.9097, lng: -1.4044 },
+  'Portsmouth': { lat: 50.8198, lng: -1.0880 },
+  'Norwich': { lat: 52.6309, lng: -1.2974 },
+  'Oxford': { lat: 51.7520, lng: -1.2577 },
+  'Cambridge': { lat: 52.2053, lng: 0.1218 },
+  'Brighton': { lat: 50.8229, lng: -0.1363 },
+  'Exeter': { lat: 50.7184, lng: -3.5339 },
+  'Plymouth': { lat: 50.3755, lng: -4.1427 },
+  'Swansea': { lat: 51.6214, lng: -3.9436 },
+  'Aberdeen': { lat: 57.1497, lng: -2.0943 },
+  'Dundee': { lat: 56.4620, lng: -2.9707 },
+  'Belfast': { lat: 54.5973, lng: -5.9301 },
+  'Middlesbrough': { lat: 54.5742, lng: -1.2350 },
+  'Sunderland': { lat: 54.9069, lng: -1.3838 },
+}
+
+function straightLineDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng/2) * Math.sin(dLng/2)
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+}
+
+function compareDistances(a, b) {
+  return a.distance - b.distance
+}
+
+function findNearestCity(lat, lng) {
+  const withDistances = Object.entries(CITY_CENTRES).map(([name, coords]) => ({
+    name, 
+    distance: straightLineDistance(lat, lng, coords.lat, coords.lng)
+  }))
+
+  const sorted = withDistances.sort(compareDistances)
+  return sorted[0].name
+}
+
 
 export default function Results({ criteria }) {
 
@@ -80,6 +140,7 @@ export default function Results({ criteria }) {
   const [crimeData, setCrimeData] = useState(null)
   const crimeStats = crimeData ? processCrimeData(crimeData) : null
   const { total, mostCommonCategory } = crimeStats || {} //Crime data
+  const [commuteData, setCommuteData] = useState(null)
 
 
   useEffect(() => {
@@ -98,10 +159,29 @@ export default function Results({ criteria }) {
 
         const locality = postcodeData.result.admin_ward.toUpperCase()
 
-        const { latitude, longitude } = postcodeData.result        
+        const { latitude, longitude } = postcodeData.result
+
+        const nearestCity = findNearestCity(latitude, longitude)
+        const cityCoords = CITY_CENTRES[nearestCity]
+        const distanceKm = straightLineDistance(latitude, longitude, cityCoords.lat, cityCoords.lng)
+        const distanceMiles = Math.round(distanceKm * 0.621371)
+
+        setCommuteData({
+          nearestCity,
+          distanceMiles
+        })     
      
         const years = [2021, 2022, 2023, 2024, 2025]
 
+        const overpassQuery = `
+          [out:json];
+          (
+            node["railway"="station"](around:3000,${latitude},${longitude});
+            node["railway"="halt"](around:3000,${latitude},${longitude});
+          );
+          out;
+        `
+        //Land registry and Crime data APIs
         const [crimeRes, ...priceResByYear] = await Promise.all([
           fetch(`https://data.police.uk/api/crimes-street/all-crime?lat=${latitude}&lng=${longitude}`),
           ...years.map(year =>
@@ -109,15 +189,36 @@ export default function Results({ criteria }) {
           )
         ])
 
+        // Stations - separate so it doesn't block everything else
+        let nearbyStations = 0
+        try {
+          const stationRes = await fetch('https://overpass-api.de/api/interpreter', {
+          method: 'POST',
+          body: overpassQuery
+        })
+        const stationsJson = await stationRes.json()
+        nearbyStations = stationsJson.elements.length
+        console.log('stations:', stationsJson.elements.map(s => s.tags.name))
+        } catch {
+          console.log('Stations data unavailable')
+        }
+
         const crimeJson = await crimeRes.json()
-        const priceJsonByYear = await Promise.all(priceResByYear.map(r => r.json()))
+        const priceJsonByYear = await Promise.all(priceResByYear.map(r => r.json()))        
 
         setCrimeData(crimeJson)
         setPriceData(priceJsonByYear)
+        setCommuteData({
+          nearestCity,
+          distanceMiles,
+          nearbyStations
+        })
 
         console.log(crimeJson)
+        
 
       } catch (err) {
+        console.error('fetchAll error: ', err)
         setError('Something went wrong. Please try again.')
     }
   }
@@ -132,9 +233,11 @@ export default function Results({ criteria }) {
 
     //12 year price change
   const currentPrice = priceByYear?.findLast(price => price !== null)
-  const previousPrice = priceByYear?.slice(0, -1).findLast(price => price !== null)
-  const priceChange = currentPrice && previousPrice ?
-    ((currentPrice - previousPrice) / previousPrice * 100).toFixed(1) : null
+  const currentUKMedianPrice = 285000
+  const vsUKAverage = currentPrice - currentUKMedianPrice
+  const vsUKAverageFormatted = vsUKAverage >= 0
+    ? `+£${vsUKAverage.toLocaleString()}` 
+    : `-£${Math.abs(vsUKAverage).toLocaleString()}`
 
     //Most common property type
   const allTransactions = priceData ? priceData.flatMap(yearData => yearData.result.items || []) : []
@@ -194,10 +297,8 @@ export default function Results({ criteria }) {
               <p className={styles.statValue}>{currentPrice ? `£${currentPrice.toLocaleString()}` : 'No data'}</p>
             </div>
             <div className={styles.stat}>
-              <p className={styles.statLabel}>12-month change</p>
-              <p className={styles.statValue}>
-                {priceChange ? `${priceChange > 0 ? '+' : ''}${priceChange}%` : 'No data'}
-              </p>
+              <p className={styles.statLabel}>vs UK Median</p>
+              <p className={styles.statValue}>{vsUKAverageFormatted || 'No data'}</p>
             </div>
             <div className={styles.stat}>
               <p className={styles.statLabel}>Most common type</p>
@@ -264,16 +365,16 @@ export default function Results({ criteria }) {
 
           <div className={styles.stats}>
             <div className={styles.stat}>
-              <p className={styles.statLabel}>To city centre</p>
-              <p className={styles.statValue}>24 min</p>
+              <p className={styles.statLabel}>Nearest city</p>
+              <p className={styles.statValue}>{commuteData?.nearestCity || 'Loading...'}</p>
             </div>
             <div className={styles.stat}>
-              <p className={styles.statLabel}>Modes</p>
-              <p className={styles.statValue}>Metrolink + rail</p>
+              <p className={styles.statLabel}>Distance to {commuteData?.nearestCity}</p>
+              <p className={styles.statValue}>{commuteData ? `${commuteData.distanceMiles} miles` : 'Loading...'}</p>
             </div>
             <div className={styles.stat}>
-              <p className={styles.statLabel}>Stations &lt; 1 mile</p>
-              <p className={styles.statValue}>6</p>
+              <p className={styles.statLabel}>Train Stations &lt; 3 miles</p>
+              <p className={styles.statValue}>{commuteData !== null ? commuteData.nearbyStations : 'Loading...'}</p>
             </div>
           </div>
         </div>
