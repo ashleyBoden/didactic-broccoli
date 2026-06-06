@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import styles from './Results.module.css'
 import { useEffect, useState } from 'react'
 import { calculateScores } from '../utils/scoring'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
 
   //property data processing functions
@@ -33,6 +34,19 @@ function getMostCommonType(items) {
   const mostCommon = Object.keys(tally).sort((a, b) => tally[b] - tally[a])[0]
   return mostCommon
 }
+
+function getLast5Years() {
+  const currentYear = new Date().getFullYear()
+  return [
+    currentYear - 4,
+    currentYear - 3,
+    currentYear - 2,
+    currentYear - 1, 
+    currentYear
+  ]
+}
+
+const years = getLast5Years()
 
   //Crime data processing functions
 function formatCategory(category) {
@@ -142,6 +156,7 @@ export default function Results({ criteria }) {
   const crimeStats = crimeData ? processCrimeData(crimeData) : null
   const { total, mostCommonCategory } = crimeStats || {} //Crime data
   const [commuteData, setCommuteData] = useState(null)
+  const [showPriceTrend, setShowPriceTrend] = useState(false)
 
 
   useEffect(() => {
@@ -171,8 +186,6 @@ export default function Results({ criteria }) {
           nearestCity,
           distanceMiles
         })     
-     
-        const years = [2021, 2022, 2023, 2024, 2025]
 
         const overpassQuery = `
           [out:json];
@@ -249,6 +262,13 @@ export default function Results({ criteria }) {
     //Most common property type
   const allTransactions = priceData ? priceData.flatMap(yearData => yearData.result.items || []) : []
   const mostCommonType = getMostCommonType(allTransactions)
+
+    //Price trend graph
+  const maxPrice = priceByYear ? Math.max(...priceByYear.filter(p => p !== null)) : 0
+  const priceChartData = years.map((year, index) => ({
+    year: year.toString(),
+    price: priceByYear?.[index] ?? null
+  })).filter(d => d.price !== null)
 
     //National rank
   const rank = locationData?.result.index_of_multiple_deprivation
@@ -328,7 +348,37 @@ export default function Results({ criteria }) {
             </div>
           </div>          
 
-          <button className={styles.trendToggle}>Trend</button>
+          <button 
+            className={styles.trendToggle}
+            onClick={() => setShowPriceTrend(!showPriceTrend)}
+          >
+            Trend {showPriceTrend ? '▲' : '▼'}
+          </button>
+
+          {showPriceTrend && (
+            <div style={{ width: '100%', height: 160 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={priceChartData} margin={{ top: 10, right: 20, bottom: 0, left: 20 }}>
+                  <XAxis dataKey="year" stroke="#888892" tick={{ fill: '#888892', fontSize: 12 }} />
+                  <YAxis hide={true} domain={['dataMin - 10000', 'dataMax + 10000']} />
+                  <Tooltip 
+                    formatter={(value) => [`£${value.toLocaleString()}`, 'Median price']}
+                    contentStyle={{ background: '#222226', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px' }}
+                    labelStyle={{ color: '#888892' }}
+                    itemStyle={{ color: '#F5F4F0' }}
+                  />
+                  <Line 
+                    type="linear" 
+                    dataKey="price" 
+                    stroke="#4169E1" 
+                    strokeWidth={2}
+                    dot={{ fill: '#4169E1', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
         <div className={styles.card}>
