@@ -363,8 +363,6 @@ export default function Results({ criteria }) {
               <p className={styles.statValue}>{mostCommonCategory ? formatCategory(mostCommonCategory) : 'No data'}</p>
             </div>
           </div>          
-
-          <button className={styles.trendToggle}>Trend</button>
         </div>
 
         <div className={styles.card}>
