@@ -297,6 +297,9 @@ export default function Results({ criteria }) {
       }, criteria)
     : null
 
+    // loading
+  const isLoading = !locationData || !crimeData || !priceData || !commuteData
+
   return (
     <main className={styles.main}>
 
@@ -306,196 +309,206 @@ export default function Results({ criteria }) {
         New search
         </Link>
 
-        <div className={styles.header}>
-          <div className={styles.headerLeft}>
-            <p className={styles.postcode}>{formatPostcode(postcode)}</p>
-            <p className={styles.location}>{locationData ? `${locationData.result.admin_ward}, ${locationData.result.admin_district}` : 'Loading...'}</p>
+        {isLoading ? (
+          <div className={styles.loadingContainer}>
+            <div className={styles.spinner}></div>
+            <p className={styles.loadingText}>Scoring your postcode...</p>
           </div>
+        ) : (
+          <>
+            <div className={styles.header}>
+              <div className={styles.headerLeft}>
+                <p className={styles.postcode}>{formatPostcode(postcode)}</p>
+                <p className={styles.location}>{locationData ? `${locationData.result.admin_ward}, ${locationData.result.admin_district}` : 'Loading...'}</p>
+              </div>
 
-          <div className={styles.headerRight}>
-            <svg width="150" height="150" viewBox="0 0 120 120">
-              <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="4"/>
-              <circle cx="60" cy="60" r="54" fill="none" stroke="#4169E1" strokeWidth="8"
-                strokeDasharray="339.3"
-                strokeDashoffset={339.3 * (1 - (scores?.overallScore ?? 0) / 10)}
-                strokeLinecap="round"
-                transform="rotate(-90 60 60)"
-              />
-            </svg>
-            <p className={styles.scoreNumber}>{scores ? scores.overallScore.toFixed(1) : '—'}</p>
-            <p className={styles.scoreLabel}>/ 10</p>
-            <p className={styles.scoreName}>POSTMARK SCORE</p>
-          </div>
+              <div className={styles.headerRight}>
+                <svg width="150" height="150" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="4"/>
+                  <circle cx="60" cy="60" r="54" fill="none" stroke="#4169E1" strokeWidth="8"
+                    strokeDasharray="339.3"
+                    strokeDashoffset={339.3 * (1 - (scores?.overallScore ?? 0) / 10)}
+                    strokeLinecap="round"
+                    transform="rotate(-90 60 60)"
+                  />
+                </svg>
+                <p className={styles.scoreNumber}>{scores ? scores.overallScore.toFixed(1) : '—'}</p>
+                <p className={styles.scoreLabel}>/ 10</p>
+                <p className={styles.scoreName}>POSTMARK SCORE</p>
+              </div>
           
-        </div>
+            </div>
 
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <div>
-              <p className={styles.cardTitle}>House prices</p>
-              <p className={styles.cardSource}>HM Land Registry · {locationData?.result.admin_ward} area</p>
-            </div>
-            <div className={styles.scorePill}>
-              <span className={styles.scoreDot}></span>
-              <span>{scores ? scores.housePricesScore.toFixed(1) : '—'}</span>
-            </div>
-          </div>
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <div>
+                  <p className={styles.cardTitle}>House prices</p>
+                  <p className={styles.cardSource}>HM Land Registry · {locationData?.result.admin_ward} area</p>
+                </div>
+                <div className={styles.scorePill}>
+                  <span className={styles.scoreDot}></span>
+                  <span>{scores ? scores.housePricesScore.toFixed(1) : '—'}</span>
+                </div>
+              </div>
 
-          <div className={styles.progressBar}>
-            <div className={styles.progressFill} style={{ width: `${scores?.housePricesScore * 10}%` }}></div>
-          </div>
+              <div className={styles.progressBar}>
+                <div className={styles.progressFill} style={{ width: `${scores?.housePricesScore * 10}%` }}></div>
+              </div>
 
-          <p className={styles.cardSummary}>Above the Manchester average, but stable and well-supported by demand.</p>
+              <p className={styles.cardSummary}>Above the Manchester average, but stable and well-supported by demand.</p>
 
-          <div className={`${styles.stats} ${styles.statsWithBorder}`}>
-            <div className={styles.stat}>
-              <p className={styles.statLabel}>Median sold price</p>
-              <p className={styles.statValue}>{currentPrice ? `£${currentPrice.toLocaleString()}` : 'No data'}</p>
-            </div>
-            <div className={styles.stat}>
-              <p className={styles.statLabel}>vs UK Median</p>
-              <p className={styles.statValue}>{vsUKAverageFormatted || 'No data'}</p>
-            </div>
-            <div className={styles.stat}>
-              <p className={styles.statLabel}>Most common type</p>
-              <p className={styles.statValue}>{mostCommonType || 'No data'}</p>
-            </div>
-          </div>          
+              <div className={`${styles.stats} ${styles.statsWithBorder}`}>
+                <div className={styles.stat}>
+                  <p className={styles.statLabel}>Median sold price</p>
+                  <p className={styles.statValue}>{currentPrice ? `£${currentPrice.toLocaleString()}` : 'No data'}</p>
+                </div>
+                <div className={styles.stat}>
+                  <p className={styles.statLabel}>vs UK Median</p>
+                  <p className={styles.statValue}>{vsUKAverageFormatted || 'No data'}</p>
+                </div>
+                <div className={styles.stat}>
+                  <p className={styles.statLabel}>Most common type</p>
+                  <p className={styles.statValue}>{mostCommonType || 'No data'}</p>
+                </div>
+              </div>          
 
-          <button 
-            className={styles.trendToggle}
-            onClick={() => setShowPriceTrend(!showPriceTrend)}
-          >
-            Trend {showPriceTrend ? '▲' : '▼'}
-          </button>
+              <button 
+                className={styles.trendToggle}
+                onClick={() => setShowPriceTrend(!showPriceTrend)}
+              >
+                Trend {showPriceTrend ? '▲' : '▼'}
+              </button>
 
-          {showPriceTrend && (
-            <div style={{ width: '100%', height: 240 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={priceChartData} margin={{ top: 10, right: 20, bottom: 0, left: 20 }}>
-                  <XAxis dataKey="year" stroke="#888892" tick={{ fill: '#888892', fontSize: 12 }} />
-                  <YAxis hide={true} domain={['dataMin - 10000', 'dataMax + 10000']} />
-                  <Tooltip 
-                    formatter={(value) => [`£${value.toLocaleString()}`, 'Median price']}
-                    contentStyle={{ background: '#222226', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px' }}
-                    labelStyle={{ color: '#888892' }}
-                    itemStyle={{ color: '#F5F4F0' }}
-                  />
-                  <Line 
-                    type="linear" 
-                    dataKey="price" 
-                    stroke="#4169E1" 
-                    strokeWidth={2}
-                    dot={{ fill: '#4169E1', r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {showPriceTrend && (
+                <div style={{ width: '100%', height: 240 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={priceChartData} margin={{ top: 10, right: 20, bottom: 0, left: 20 }}>
+                      <XAxis dataKey="year" stroke="#888892" tick={{ fill: '#888892', fontSize: 12 }} />
+                      <YAxis hide={true} domain={['dataMin - 10000', 'dataMax + 10000']} />
+                      <Tooltip 
+                        formatter={(value) => [`£${value.toLocaleString()}`, 'Median price']}
+                        contentStyle={{ background: '#222226', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px' }}
+                        labelStyle={{ color: '#888892' }}
+                        itemStyle={{ color: '#F5F4F0' }}
+                      />
+                      <Line 
+                        type="linear" 
+                        dataKey="price" 
+                        stroke="#4169E1" 
+                        strokeWidth={2}
+                        dot={{ fill: '#4169E1', r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <div>
-              <p className={styles.cardTitle}>Crime rate</p>
-              <p className={styles.cardSource}>Police.uk · {formatMonth(crimeData?.[0]?.month)}</p>
-            </div>
-            <div className={styles.scorePill}>
-              <span className={styles.scoreDot}></span>
-              <span>{scores ? scores.crimeScore.toFixed(1) : '—'}</span>
-            </div>
-          </div>
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <div>
+                  <p className={styles.cardTitle}>Crime rate</p>
+                  <p className={styles.cardSource}>Police.uk · {formatMonth(crimeData?.[0]?.month)}</p>
+                </div>
+                <div className={styles.scorePill}>
+                  <span className={styles.scoreDot}></span>
+                  <span>{scores ? scores.crimeScore.toFixed(1) : '—'}</span>
+                </div>
+              </div>
 
-          <div className={styles.progressBar}>
-            <div className={styles.progressFill} style={{ width: `${scores?.crimeScore * 10}%` }}></div>
-          </div>
+              <div className={styles.progressBar}>
+                <div className={styles.progressFill} style={{ width: `${scores?.crimeScore * 10}%` }}></div>
+              </div>
 
-          <p className={styles.cardSummary}>Lower than most of inner Manchester. Vehicle crime is the main category.</p>
+              <p className={styles.cardSummary}>Lower than most of inner Manchester. Vehicle crime is the main category.</p>
 
-          <div className={styles.stats}>
-            <div className={styles.stat}>
-              <p className={styles.statLabel}>Total crime for the month</p>
-              <p className={styles.statValue}>{total ? total : null}</p>
+              <div className={styles.stats}>
+                <div className={styles.stat}>
+                  <p className={styles.statLabel}>Total crime for the month</p>
+                  <p className={styles.statValue}>{total ? total : null}</p>
+                </div>
+                <div className={styles.stat}>
+                  <p className={styles.statLabel}>Data period</p>
+                  <p className={styles.statValue}>{formatMonth(crimeData?.[0]?.month)}</p>
+                </div>
+                <div className={styles.stat}>
+                  <p className={styles.statLabel}>Most common</p>
+                  <p className={styles.statValue}>{mostCommonCategory ? formatCategory(mostCommonCategory) : 'No data'}</p>
+                </div>
+              </div>          
             </div>
-            <div className={styles.stat}>
-              <p className={styles.statLabel}>Data period</p>
-              <p className={styles.statValue}>{formatMonth(crimeData?.[0]?.month)}</p>
-            </div>
-            <div className={styles.stat}>
-              <p className={styles.statLabel}>Most common</p>
-              <p className={styles.statValue}>{mostCommonCategory ? formatCategory(mostCommonCategory) : 'No data'}</p>
-            </div>
-          </div>          
-        </div>
 
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <div>
-              <p className={styles.cardTitle}>Commute time</p>
-              <p className={styles.cardSource}>TfGM · National Rail</p>
-            </div>
-            <div className={styles.scorePill}>
-              <span className={styles.scoreDot}></span>
-              <span>{scores ? scores.commuteScore.toFixed(1) : '—'}</span>
-            </div>
-          </div>
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <div>
+                  <p className={styles.cardTitle}>Commute time</p>
+                  <p className={styles.cardSource}>TfGM · National Rail</p>
+                </div>
+                <div className={styles.scorePill}>
+                  <span className={styles.scoreDot}></span>
+                  <span>{scores ? scores.commuteScore.toFixed(1) : '—'}</span>
+                </div>
+              </div>
 
-          <div className={styles.progressBar}>
-            <div className={styles.progressFill} style={{ width: `${scores?.commuteScore * 10}%` }}></div>
-          </div>
+              <div className={styles.progressBar}>
+                <div className={styles.progressFill} style={{ width: `${scores?.commuteScore * 10}%` }}></div>
+              </div>
 
-          <p className={styles.cardSummary}>Fast, frequent links into the city centre on both Metrolink and rail.</p>
+              <p className={styles.cardSummary}>Fast, frequent links into the city centre on both Metrolink and rail.</p>
 
-          <div className={styles.stats}>
-            <div className={styles.stat}>
-              <p className={styles.statLabel}>Nearest city</p>
-              <p className={styles.statValue}>{commuteData?.nearestCity || 'Loading...'}</p>
+              <div className={styles.stats}>
+                <div className={styles.stat}>
+                  <p className={styles.statLabel}>Nearest city</p>
+                  <p className={styles.statValue}>{commuteData?.nearestCity || 'Loading...'}</p>
+                </div>
+                <div className={styles.stat}>
+                  <p className={styles.statLabel}>Distance to {commuteData?.nearestCity}</p>
+                  <p className={styles.statValue}>{commuteData ? `${commuteData.distanceMiles} miles` : 'Loading...'}</p>
+                </div>
+                <div className={styles.stat}>
+                  <p className={styles.statLabel}>Train Stations &lt; 3 miles</p>
+                  <p className={styles.statValue}>{commuteData !== null ? commuteData.nearbyStations : 'Loading...'}</p>
+                </div>
+              </div>
             </div>
-            <div className={styles.stat}>
-              <p className={styles.statLabel}>Distance to {commuteData?.nearestCity}</p>
-              <p className={styles.statValue}>{commuteData ? `${commuteData.distanceMiles} miles` : 'Loading...'}</p>
-            </div>
-            <div className={styles.stat}>
-              <p className={styles.statLabel}>Train Stations &lt; 3 miles</p>
-              <p className={styles.statValue}>{commuteData !== null ? commuteData.nearbyStations : 'Loading...'}</p>
-            </div>
-          </div>
-        </div>
 
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <div>
-              <p className={styles.cardTitle}>Deprivation index</p>
-              <p className={styles.cardSource}>ONS · IMD 2019</p>
-            </div>
-            <div className={styles.scorePill}>
-              <span className={styles.scoreDot}></span>
-              <span>{scores ? scores.deprivationScore.toFixed(1) : '—'}</span>
-            </div>
-          </div>
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <div>
+                  <p className={styles.cardTitle}>Deprivation index</p>
+                  <p className={styles.cardSource}>ONS · IMD 2019</p>
+                </div>
+                <div className={styles.scorePill}>
+                  <span className={styles.scoreDot}></span>
+                  <span>{scores ? scores.deprivationScore.toFixed(1) : '—'}</span>
+                </div>
+              </div>
 
-          <div className={styles.progressBar}>
-            <div className={styles.progressFill} style={{ width: `${scores?.deprivationScore * 10}%` }}></div>
-          </div>
+              <div className={styles.progressBar}>
+                <div className={styles.progressFill} style={{ width: `${scores?.deprivationScore * 10}%` }}></div>
+              </div>
 
-          <p className={styles.cardSummary}>Mid-range deprivation. Some variation within the postcode district.</p>
+              <p className={styles.cardSummary}>Mid-range deprivation. Some variation within the postcode district.</p>
 
-          <div className={styles.stats}>
-            <div className={styles.stat}>
-              <p className={styles.statLabel}>IMD decile</p>
-              <p className={styles.statValue}>{rank ? Math.ceil((rank / 32844) * 10) : null}</p>
+              <div className={styles.stats}>
+                <div className={styles.stat}>
+                  <p className={styles.statLabel}>IMD decile</p>
+                  <p className={styles.statValue}>{rank ? Math.ceil((rank / 32844) * 10) : null}</p>
+                </div>
+                <div className={styles.stat}>
+                  <p className={styles.statLabel}>National rank</p>
+                  <p className={styles.statValue}>{rank ? rank : null} out of 32,844</p>
+                </div>
+                <div className={styles.stat}>
+                  <p className={styles.statLabel}>Parliamentary constituency</p>
+                  <p className={styles.statValue}>{locationData ? locationData.result.parliamentary_constituency_2024 : null}</p>
+                </div>
+              </div>
             </div>
-            <div className={styles.stat}>
-              <p className={styles.statLabel}>National rank</p>
-              <p className={styles.statValue}>{rank ? rank : null} out of 32,844</p>
-            </div>
-            <div className={styles.stat}>
-              <p className={styles.statLabel}>Parliamentary constituency</p>
-              <p className={styles.statValue}>{locationData ? locationData.result.parliamentary_constituency_2024 : null}</p>
-            </div>
-          </div>
-        </div>
+          </>
+        )
+      }
     </main>
   )
 }
