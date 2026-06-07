@@ -198,6 +198,7 @@
     font-size: 0.85rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    margin-bottom: 10px;
 }
 
 .trendToggle:hover {

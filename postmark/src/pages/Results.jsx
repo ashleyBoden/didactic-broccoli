@@ -218,10 +218,24 @@ export default function Results({ criteria }) {
         }
 
         const crimeJson = await crimeRes.json()
-        const priceJsonByYear = await Promise.all(priceResByYear.map(r => r.json()))        
+        const priceJsonByYear = await Promise.all(priceResByYear.map(r => r.json()))
+        
+        const noPriceByYear = priceJsonByYear.every(year => year.result.items.length === 0)
+
+        if (noPriceByYear) {
+          const town = postcodeData.result.admin_district.toUpperCase()
+          const fallbackResults = await Promise.all(
+            years.map(year => 
+              fetch(`https://landregistry.data.gov.uk/data/ppi/transaction-record.json?propertyAddress.town=${town}&min-transactionDate=${year}-01-01&max-transactionDate=${year}-12-31&_page=0&_pageSize=50`)
+            )
+          )
+          const fallbackJsonByYear = await Promise.all(fallbackResults.map(r => r.json()))
+          setPriceData(fallbackJsonByYear)
+        } else {
+          setPriceData(priceJsonByYear)
+        }
 
         setCrimeData(crimeJson)
-        setPriceData(priceJsonByYear)
         setCommuteData({
           nearestCity,
           distanceMiles,
@@ -356,7 +370,7 @@ export default function Results({ criteria }) {
           </button>
 
           {showPriceTrend && (
-            <div style={{ width: '100%', height: 160 }}>
+            <div style={{ width: '100%', height: 240 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={priceChartData} margin={{ top: 10, right: 20, bottom: 0, left: 20 }}>
                   <XAxis dataKey="year" stroke="#888892" tick={{ fill: '#888892', fontSize: 12 }} />
@@ -399,7 +413,7 @@ export default function Results({ criteria }) {
 
           <p className={styles.cardSummary}>Lower than most of inner Manchester. Vehicle crime is the main category.</p>
 
-          <div className={`${styles.stats} ${styles.statsWithBorder}`}>
+          <div className={styles.stats}>
             <div className={styles.stat}>
               <p className={styles.statLabel}>Total crime for the month</p>
               <p className={styles.statValue}>{total ? total : null}</p>
