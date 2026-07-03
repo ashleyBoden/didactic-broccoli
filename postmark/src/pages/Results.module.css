@@ -166,11 +166,38 @@
     gap: 6px;
 }
 
+.scorePillHigh {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10B981;
+}
+
+.scorePillMid {
+    background: rgba(245, 158, 11, 0.15);
+    color: #F59E0B;
+}
+
+.scorePillLow {
+    background: rgba(239, 68, 68, 0.15);
+    color: #EF4444;
+}
+
 .scoreDot {
     width: 5px;
     height: 5px;
     background: var(--accent);
     border-radius: 50%;
+}
+
+.scoreDotHigh {
+    background: #10B981;
+}
+
+.scoreDotMid {
+    background: #F59E0B;
+}
+
+.scoreDotLow {
+    background: #EF4444;
 }
 
 .back {

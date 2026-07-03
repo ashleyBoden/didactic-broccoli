@@ -34,6 +34,7 @@
     flex-direction: row;
     width: 600px;
     margin-bottom: 1rem;
+    position: relative;
 }
 
 .searchBar input {
@@ -93,13 +94,43 @@
 
 .criteria a {
     color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: 1.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: border 0.25s ease-in-out, color 0.25s ease-in-out;
 }
 
 .criteria a:hover {
     color: var(--text-primary);
+    border: 1px solid var(--accent);
 }
 
 .suggestion {
     color: var(--text-secondary);
+}
+
+.suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #222226;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 4px;
+    list-style: none;
+    padding: 4px 0;
+    z-index: 10;
+    width: 20%;
+}
+
+.suggestions li {
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.suggestions li:hover {
+    background: rgba(255, 255, 255, 0.05);
 }

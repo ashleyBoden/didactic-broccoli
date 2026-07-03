@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { calculateScores } from '../utils/scoring'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
-
   //property data processing functions
 function formatPostcode(raw) {
   const clean = raw.replace(/\s+/g, '').toUpperCase()
@@ -199,12 +198,7 @@ useEffect(() => {
         const nearestCity = findNearestCity(latitude, longitude)
         const cityCoords = CITY_CENTRES[nearestCity]
         const distanceKm = straightLineDistance(latitude, longitude, cityCoords.lat, cityCoords.lng)
-        const distanceMiles = Math.round(distanceKm * 0.621371)
-
-        setCommuteData({
-          nearestCity,
-          distanceMiles
-        })     
+        const distanceMiles = Math.round(distanceKm * 0.621371)           
 
         const overpassQuery = `
           [out:json];
@@ -328,13 +322,28 @@ useEffect(() => {
     : null
 
     // loading
-  const isLoading = !locationData || !crimeData || !priceData || !commuteData
+  const isLoading = !locationData || !crimeData || !priceData  || !commuteData
 
   useEffect(() => {
     if (!isLoading) {
       setTimeout(() => setAnimate(true), 100)
     }
   }, [isLoading])
+
+  function scorePillClass(score) {
+    if (!score) return ''
+    if (score >= 7) return styles.scorePillHigh
+    if (score >= 4) return styles.scorePillMid
+    if(score == 0.0) return styles.scorePillLow
+    return styles.scorePillLow
+  }
+
+  function scoreDotClass(score) {
+    if (!score) return ''
+    if (score >= 7) return styles.scoreDotHigh
+    if (score >= 4) return styles.scoreDotMid
+    return styles.scoreDotLow
+  }
 
   return (
     <main className={styles.main}>
@@ -371,13 +380,17 @@ useEffect(() => {
                   <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="4"/>
                   <circle cx="60" cy="60" r="54" fill="none" stroke="#0D9488" strokeWidth="8"
                     strokeDasharray="339.3"
-                    strokeDashoffset={339.3 * (1 - (scores?.overallScore ?? 0) / 10)}
+                    strokeDashoffset={animate 
+                      ? 339.3 * (1 - (scores?.overallScore ?? 0) / 10)
+                      : 339.3
+                    }
                     strokeLinecap="round"
                     transform="rotate(-90 60 60)"
                     filter="url(#glow)"
+                    style={{ transition: 'stroke-dashoffset 1s ease-out' }}
                   />
                   <text x="60" y="53" textAnchor="middle" dominantBaseline="central" 
-                    fill="#FFFFFF" fontSize="28" fontWeight="700" fontFamily="Outfit, sans-serif">
+                    fill="#FFFFFF" fontSize="35" fontWeight="700" fontFamily="Outfit, sans-serif">
                       {scores ? scores.overallScore.toFixed(1) : '—'}
                   </text>
                   <text x="60" y="80" textAnchor="middle" dominantBaseline="central"
@@ -396,8 +409,8 @@ useEffect(() => {
                   <p className={styles.cardTitle}>House prices</p>
                   <p className={styles.cardSource}>HM Land Registry · {locationData?.result.admin_ward} area</p>
                 </div>
-                <div className={styles.scorePill}>
-                  <span className={styles.scoreDot}></span>
+                <div className={`${styles.scorePill} ${scorePillClass(scores?.housePricesScore)}`}>
+                  <span className={` ${styles.scoreDot} ${scoreDotClass(scores?.housePricesScore)}`}></span>
                   <span>{scores ? scores.housePricesScore.toFixed(1) : '—'}</span>
                 </div>
               </div>
@@ -467,8 +480,8 @@ useEffect(() => {
                   <p className={styles.cardTitle}>Crime rate</p>
                   <p className={styles.cardSource}>Police.uk · {formatMonth(crimeData?.[0]?.month)}</p>
                 </div>
-                <div className={styles.scorePill}>
-                  <span className={styles.scoreDot}></span>
+                <div className={`${styles.scorePill} ${scorePillClass(scores?.crimeScore)}`}>
+                  <span className={` ${styles.scoreDot} ${scoreDotClass(scores?.crimeScore)}`}></span>
                   <span>{scores ? scores.crimeScore.toFixed(1) : '—'}</span>
                 </div>
               </div>
@@ -500,10 +513,10 @@ useEffect(() => {
               <div className={styles.cardHeader}>
                 <div>
                   <p className={styles.cardTitle}>Commute time</p>
-                  <p className={styles.cardSource}>TfGM · National Rail</p>
+                  <p className={styles.cardSource}>OpenStreetMap · Nearby transport</p>
                 </div>
-                <div className={styles.scorePill}>
-                  <span className={styles.scoreDot}></span>
+                <div className={`${styles.scorePill} ${scorePillClass(scores?.commuteScore)}`}>
+                  <span className={` ${styles.scoreDot} ${scoreDotClass(scores?.commuteScore)}`}></span>
                   <span>{scores ? scores.commuteScore.toFixed(1) : '—'}</span>
                 </div>
               </div>
@@ -541,8 +554,8 @@ useEffect(() => {
                   <p className={styles.cardTitle}>Deprivation index</p>
                   <p className={styles.cardSource}>ONS · IMD 2019</p>
                 </div>
-                <div className={styles.scorePill}>
-                  <span className={styles.scoreDot}></span>
+                <div className={`${styles.scorePill} ${scorePillClass(scores?.deprivationScore)}`}>
+                  <span className={` ${styles.scoreDot} ${scoreDotClass(scores?.deprivationScore)}`}></span>
                   <span>{scores ? scores.deprivationScore.toFixed(1) : '—'}</span>
                 </div>
               </div>
